@@ -14,4 +14,12 @@ public class ReqRespDefinitionTest {
             public int port() { return 0; }
         };
     }
+
+    @Test
+    public void theWay_howISee_veryBasicResponse() throws Exception {
+        new Response() {
+            public void body(String body) {}
+            public void code(int code) {}
+        };
+    }
 }
