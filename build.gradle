@@ -1,0 +1,63 @@
+buildscript {
+    repositories {
+        mavenCentral()
+
+        maven { url "https://oss.sonatype.org/content/groups/public" }
+        maven { url "http://repo1.maven.org/maven2" }
+
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'org.scoverage:gradle-scoverage:0.6-SNAPSHOT'
+        classpath 'net.saliman:gradle-cobertura-plugin:2.0.0'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+
+        classpath "junit:junit:4.12"
+    }
+}
+
+plugins {
+    id 'jacoco'
+    id 'com.github.kt3k.coveralls' version '2.6.3'
+    id "me.champeau.gradle.jmh" version "0.3.1"
+}
+
+apply plugin: 'idea'
+apply plugin: 'java'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'codeinten.github.io'
+version = '0.1-SNAPSHOT'
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+repositories {
+    mavenCentral()
+
+    maven { url "http://repo1.maven.org/maven2" }
+}
+
+dependencies {
+    compile group: 'junit', name: 'junit', version:'4.12'
+    compile group: 'org.hamcrest', name: 'hamcrest-all', version:'1.3'
+    compile group: 'de.bechte.junit', name: 'junit-hierarchicalcontextrunner', version:'4.12.1'
+}
+
+if (System.env.TRAVIS == 'true') {
+    allprojects {
+        tasks.withType(GroovyCompile) {
+            groovyOptions.fork = false
+        }
+        tasks.withType(Test) {
+            maxParallelForks = 2
+            minHeapSize = '128m'
+        }
+    }
+}
