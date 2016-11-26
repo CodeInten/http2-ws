@@ -2,29 +2,33 @@ package ua.http.ws;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 public class WebServer {
-    private int port;
     private ServerSocket serverSocket;
 
-    public WebServer(String[] params) {
-        for (int i = 0; i < params.length; i++) {
-            if ("-p".equals(params[i])) {
-                port = Integer.parseInt(params[i + 1]);
-                i += 1;
-            }
-        }
-    }
+    public WebServer(String[] params) {}
 
     public static void main(String[] args) throws IOException, InterruptedException {
         new WebServer(args).start();
     }
 
     public void start() throws IOException, InterruptedException {
-        serverSocket = new ServerSocket(port);
+        serverSocket = new ServerSocket(8080);
         new Thread(() -> {
             try {
-                serverSocket.accept();
+                Socket socket = serverSocket.accept();
+                RequestReader reader = new RequestReader(socket.getInputStream());
+                RequestDeserializer deserializer = new RequestDeserializer();
+                Request request = deserializer.deserializeRequest(reader.readSingleRequest());
+                RequestHandler handler = new RequestHandler();
+                Response response = handler.handle(request);
+                ResponseWriter writer = new ResponseWriter(socket.getOutputStream());
+                ResponseSerializer serializer = new ResponseSerializer();
+                writer.writeSingleResponse(serializer.serialize(response));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
