@@ -3,8 +3,6 @@ package ua.http.ws;
 public class ResponseSerializer {
     public byte[] serialize(Response response) {
         String stringRepresentation = "HTTP/1.1 200 OK\r\n" +
-//                "Host: localhost\r\n" +
-//                "Connection: Closed\r\n" +
                 "Content-Length: 0\r\n" +
                 "\r\n";
         byte[] serialized = new byte[stringRepresentation.length()];

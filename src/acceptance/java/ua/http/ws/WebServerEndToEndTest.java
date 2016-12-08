@@ -3,6 +3,8 @@ package ua.http.ws;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.HttpVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,17 +50,9 @@ public class WebServerEndToEndTest {
         ContentResponse response = client.newRequest("http://localhost:8080/")
                 .method(HttpMethod.GET)
                 .timeout(10, TimeUnit.SECONDS)
-                .onRequestBegin((r) -> System.out.println("Request has begun"))
-                .onRequestCommit((r) -> System.out.println("Request has been committed"))
-                .onRequestSuccess((r) -> System.out.println("Request has succeed"))
-                .onResponseBegin((r) -> {
-                    System.out.println(r);
-                    System.out.println(r.getHeaders());
-                    System.out.println("Response has began");
-                })
                 .send();
 
-        assertThat(response.getStatus(), is(200));
+        assertThat(response.getStatus(), is(HttpStatus.OK_200));
+        assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
     }
-
 }
