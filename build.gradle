@@ -22,6 +22,7 @@ sourceSets {
 }
 
 task acceptance(type: Test) {
+    dependsOn(test)
     testClassesDir = sourceSets.acceptance.output.classesDir
     classpath = sourceSets.acceptance.runtimeClasspath
 }
@@ -45,6 +46,7 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version:'4.12'
+    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
 
     acceptanceCompile group: 'org.eclipse.jetty', name: 'jetty-client', version: '9.3.12.v20160915'
 }
