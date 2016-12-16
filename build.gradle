@@ -48,6 +48,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version:'4.12'
     testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
 
+    acceptanceCompile group: 'de.bechte.junit', name: 'junit-hierarchicalcontextrunner', version:'4.12.1'
     acceptanceCompile group: 'org.eclipse.jetty', name: 'jetty-client', version: '9.3.12.v20160915'
 }
 

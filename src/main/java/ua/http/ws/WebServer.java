@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class WebServer {
+    private Socket clientConnection;
     private ServerSocket serverSocket;
 
     public WebServer(String[] params) {}
@@ -17,15 +18,17 @@ public class WebServer {
         serverSocket = new ServerSocket(8080);
         new Thread(() -> {
             try {
-                Socket socket = serverSocket.accept();
-                RequestReader reader = new RequestReader(socket.getInputStream());
-                RequestDeserializer deserializer = new RequestDeserializer();
-                Request request = deserializer.deserializeRequest(reader.readSingleRequest());
-                RequestHandler handler = new RequestHandler();
-                Response response = handler.handle(request);
-                ResponseWriter writer = new ResponseWriter(socket.getOutputStream());
-                ResponseSerializer serializer = new ResponseSerializer();
-                writer.writeSingleResponse(serializer.serialize(response));
+                clientConnection = serverSocket.accept();
+                while (true) {
+                    RequestReader reader = new RequestReader(clientConnection.getInputStream());
+                    RequestDeserializer deserializer = new RequestDeserializer();
+                    Request request = deserializer.deserializeRequest(reader.readSingleRequest());
+                    RequestHandler handler = new RequestHandler();
+                    Response response = handler.handle(request);
+                    ResponseWriter writer = new ResponseWriter(clientConnection.getOutputStream());
+                    ResponseSerializer serializer = new ResponseSerializer();
+                    writer.writeSingleResponse(serializer.serialize(response));
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

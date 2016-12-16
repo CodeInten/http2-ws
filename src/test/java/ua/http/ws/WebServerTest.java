@@ -112,4 +112,41 @@ public class WebServerTest {
         assertThat(stringResponse, containsString("Upgrade: h2c\r\n"));
         assertThat(stringResponse, endsWith("\r\n"));
     }
+
+    @Test(timeout = 5_000L)
+    public void twoRequestOnSameUrl() throws Exception {
+        sendRequestToServer(
+                "GET / HTTP/1.1\r\n" +
+                        "Accept-Encoding: gzip\r\n" +
+                        "User-Agent: Jetty/9.3.12.v20160915\r\n" +
+                        "Host: localhost:8080\r\n" +
+                        "\r\n"
+        );
+
+        waitForInputData();
+
+        String firstResponse = readResponseFromServer();
+
+        assertThat(firstResponse, startsWith("HTTP/1.1 200 OK\r\n"));
+        assertThat(firstResponse, containsString("Host: localhost\r\n"));
+        assertThat(firstResponse, containsString("Content-Length: 0\r\n"));
+        assertThat(firstResponse, endsWith("\r\n"));
+
+        sendRequestToServer(
+                "GET / HTTP/1.1\r\n" +
+                        "Accept-Encoding: gzip\r\n" +
+                        "User-Agent: Jetty/9.3.12.v20160915\r\n" +
+                        "Host: localhost:8080\r\n" +
+                        "\r\n"
+        );
+
+        waitForInputData();
+
+        String secondResponse = readResponseFromServer();
+
+        assertThat(secondResponse, startsWith("HTTP/1.1 200 OK\r\n"));
+        assertThat(secondResponse, containsString("Host: localhost\r\n"));
+        assertThat(secondResponse, containsString("Content-Length: 0\r\n"));
+        assertThat(secondResponse, endsWith("\r\n"));
+    }
 }

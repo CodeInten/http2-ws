@@ -1,5 +1,6 @@
 package ua.http.ws;
 
+import de.bechte.junit.runners.context.HierarchicalContextRunner;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpField;
@@ -10,18 +11,22 @@ import org.eclipse.jetty.http.HttpVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@RunWith(HierarchicalContextRunner.class)
 public class WebServerEndToEndTest {
 
     private Process webServer;
@@ -39,54 +44,76 @@ public class WebServerEndToEndTest {
         webServer.destroy();
     }
 
-    @Before
-    public void startWebClient() throws Exception {
-        client = new HttpClient();
-        client.start();
+    public class SystemTests {
+
+        @Test
+        public void serverShouldListenToTheSpecifiedPort() throws Exception {
+            Socket socket = new Socket();
+            socket.connect(new InetSocketAddress(InetAddress.getLocalHost(), 8080));
+
+            assertThat(socket.isConnected(), is(true));
+        }
+
     }
 
-    @After
-    public void stopClient() throws Exception {
-        client.stop();
-    }
+    public class HttpTests {
 
-    @Test
-    public void serverShouldListenToTheSpecifiedPort() throws Exception {
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(InetAddress.getLocalHost(), 8080));
+        @Before
+        public void startWebClient() throws Exception {
+            client = new HttpClient();
+            client.start();
+        }
 
-        assertThat(socket.isConnected(), is(true));
-    }
+        @After
+        public void stopClient() throws Exception {
+            client.stop();
+        }
 
-    @Test
-    public void serverShouldSendOk_whenGetRequestOnRoot() throws Exception {
-        ContentResponse response = client.newRequest("http://localhost:8080/")
-                .method(HttpMethod.GET)
-                .timeout(10, TimeUnit.SECONDS)
-                .send();
+        @Test
+        public void serverShouldSendOk_whenGetRequestOnRoot() throws Exception {
+            ContentResponse response = sendRequestOnRootUrl();
 
-        assertThat(response.getStatus(), is(HttpStatus.Code.OK.getCode()));
-        assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
-    }
+            assertThat(response.getStatus(), is(HttpStatus.Code.OK.getCode()));
+            assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
+        }
 
-    @Test
-    public void serverShouldSendOk_whenClientAskForConnectionUpdateToHttp_2() throws Exception {
-        ContentResponse response = client.newRequest("http://localhost:8080/")
-                .method(HttpMethod.GET)
-                .timeout(10, TimeUnit.SECONDS)
-                .version(HttpVersion.HTTP_1_1)
-                .header(HttpHeader.CONNECTION, "Upgrade")
-                .header(HttpHeader.UPGRADE, "h2c")
-                .send();
+        @Test
+        public void serverShouldSend_200_onTheSecondRequestOnRoot() throws Exception {
+            sendRequestOnRootUrl();
 
-        assertThat(response.getStatus(), is(HttpStatus.Code.SWITCHING_PROTOCOLS.getCode()));
-        assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
-        assertThat(
-                response.getHeaders(),
-                allOf(
-                        hasItem(new HttpField(HttpHeader.CONNECTION, "Upgrade")),
-                        hasItem(new HttpField(HttpHeader.UPGRADE, "h2c"))
-                )
-        );
+            ContentResponse response = sendRequestOnRootUrl();
+
+            assertThat(response.getStatus(), is(HttpStatus.Code.OK.getCode()));
+            assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
+        }
+
+        private ContentResponse sendRequestOnRootUrl() throws InterruptedException, TimeoutException, ExecutionException {
+            return client.newRequest("http://localhost:8080/")
+                    .method(HttpMethod.GET)
+                    .timeout(10, TimeUnit.SECONDS)
+                    .version(HttpVersion.HTTP_1_1)
+                    .send();
+        }
+
+        @Test
+        public void serverShouldSendOk_whenClientAskForConnectionUpdateToHttp_2() throws Exception {
+            ContentResponse response = client.newRequest("http://localhost:8080/")
+                    .method(HttpMethod.GET)
+                    .timeout(10, TimeUnit.SECONDS)
+                    .version(HttpVersion.HTTP_1_1)
+                    .header(HttpHeader.CONNECTION, "Upgrade")
+                    .header(HttpHeader.UPGRADE, "h2c")
+                    .send();
+
+            assertThat(response.getStatus(), is(HttpStatus.Code.SWITCHING_PROTOCOLS.getCode()));
+            assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
+            assertThat(
+                    response.getHeaders(),
+                    allOf(
+                            hasItem(new HttpField(HttpHeader.CONNECTION, "Upgrade")),
+                            hasItem(new HttpField(HttpHeader.UPGRADE, "h2c"))
+                    )
+            );
+        }
     }
 }
