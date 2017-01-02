@@ -21,8 +21,8 @@ public class WebServer {
                 clientConnection = serverSocket.accept();
                 while (true) {
                     RequestReader reader = new RequestReader(clientConnection.getInputStream());
-                    RequestDeserializer deserializer = new RequestDeserializer();
-                    Request request = deserializer.deserializeRequest(reader.readSingleRequest());
+                    RequestDeserializer deserializer = new RequestDeserializer(reader.readSingleRequest());
+                    Request request = deserializer.deserializeRequest();
                     RequestHandler handler = new RequestHandler();
                     Response response = handler.handle(request);
                     ResponseWriter writer = new ResponseWriter(clientConnection.getOutputStream());

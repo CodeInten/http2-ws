@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -58,11 +59,33 @@ public class RequestHandlerTest {
         assertThat(response.headers, hasEntry("Content-Length", "0"));
     }
 
+    @Test
+    public void handlePriRequest() throws Exception {
+        Response response = handler.handle(
+                new RequestBuilder()
+                        .withMethod(Method.PRI)
+                        .withUrl("*")
+                        .withVersion(Version.HTTP_2_0)
+                        .withBody("SM")
+                        .build()
+        );
+
+        assertThat(response, instanceOf(SettingFrame.class));
+    }
+
+    @Test
+    public void handleHeaderRequest_onRootDirectory() throws Exception {
+        Response response = handler.handle(new HeaderFrameRequest());
+
+        assertThat(response, instanceOf(HeaderFrameResponse.class));
+    }
+
     private class RequestBuilder {
         private Map<String, String> headers = new HashMap<>();
         private Method method;
         private String url;
         private Version version;
+        private String body;
 
         RequestBuilder withMethod(Method method) {
             this.method = method;
@@ -84,8 +107,13 @@ public class RequestHandlerTest {
             return this;
         }
 
+        public RequestBuilder withBody(String body) {
+            this.body = body;
+            return this;
+        }
+
         Request build() {
-            return new Request(method, url, version, headers);
+            return new Request(method, url, version, headers, body);
         }
     }
 }

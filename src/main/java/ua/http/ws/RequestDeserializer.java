@@ -4,42 +4,72 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RequestDeserializer {
-    public RequestDeserializer() {
+    private final byte[] rawRequest;
+    private int index;
 
+    public RequestDeserializer(byte[] rawRequest) {
+        this.rawRequest = rawRequest;
     }
 
-    public Request deserializeRequest(byte[] request) {
-        Map<String, String> headers = parseHttpHeaders(request);
-        return new Request(Method.GET, "/", Version.HTTP_1_1, headers);
+    public Request deserializeRequest() {
+        if (rawRequest[0] == 0) {
+            return new HeaderFrameRequest();
+        }
+        Method method = Method.valueOf(parseMethod());
+        String url = parseUrl();
+        Version version = Version.valueOf(parseVersion().replace(".", "_").replace("/", "_"));
+        Map<String, String> headers = parseHttpHeaders();
+        return new Request(method, url, version, headers, "SM");
     }
 
-    private Map<String, String> parseHttpHeaders(byte[] request) {
+    private String parseMethod() {
+        StringBuilder builder = new StringBuilder();
+        for (; rawRequest[index] != ' '; index++) {
+            builder.append((char)rawRequest[index]);
+        }
+        index += 1;
+        return builder.toString();
+    }
+
+    private String parseUrl() {
+        String url = String.valueOf((char)rawRequest[index]);
+        index += 2;
+        return url;
+    }
+
+    private String parseVersion() {
+        StringBuilder builder = new StringBuilder();
+        while (notEndOfLine()) {
+            builder.append((char)rawRequest[index]);
+            index++;
+        }
+        index += 2;
+        return builder.toString();
+    }
+
+    private boolean notEndOfLine() {
+        return rawRequest[index] != '\r' && rawRequest[index + 1] != '\n';
+    }
+
+    private Map<String, String> parseHttpHeaders() {
         Map<String, String> headers = new HashMap<>();
-        for (int i = skipStartHttpLine(); i < getHeadersLength(request); i++) {
+        while (notEndOfLine()) {
             StringBuilder nameBuilder = new StringBuilder();
-            while (request[i] != (byte)':') {
-                nameBuilder.append((char)request[i]);
-                i += 1;
+            while (rawRequest[index] != (byte)':') {
+                nameBuilder.append((char)rawRequest[index]);
+                index += 1;
             }
             String headerName = nameBuilder.toString().trim();
-            i += 1;
+            index += 1;
             StringBuilder valueBuilder = new StringBuilder();
-            while (request[i] != (byte)'\r') {
-                valueBuilder.append((char)request[i]);
-                i += 1;
+            while (rawRequest[index] != (byte)'\r') {
+                valueBuilder.append((char)rawRequest[index]);
+                index += 1;
             }
             String headerValue = valueBuilder.toString().trim();
             headers.put(headerName, headerValue);
-            i += 1;
+            index += 2;
         }
         return headers;
-    }
-
-    private int getHeadersLength(byte[] request) {
-        return request.length - 2;
-    }
-
-    private int skipStartHttpLine() {
-        return 16;
     }
 }

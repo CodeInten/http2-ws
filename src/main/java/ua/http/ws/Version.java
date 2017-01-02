@@ -1,7 +1,7 @@
 package ua.http.ws;
 
 public enum Version {
-    HTTP_1_1;
+    HTTP_1_1, HTTP_2_0;
 
 
     @Override

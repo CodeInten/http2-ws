@@ -1,9 +1,25 @@
 package ua.http.ws;
 
+import com.twitter.hpack.Encoder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Map;
 
 public class ResponseSerializer {
     public byte[] serialize(Response response) {
+        if (response instanceof HeaderFrameResponse) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                out.write(new byte[]{0, 0, 1, 1, 5, 0, 0, 0, 1});
+                Encoder encoder = new Encoder(4096);
+                encoder.encodeHeader(out, ":status".getBytes(), "200".getBytes(), false);
+            } catch (IOException e) {}
+            return out.toByteArray();
+        }
+        if (response instanceof SettingFrame) {
+            return new byte[] {0, 0, 0, 4, 1, 0, 0, 0, 0};
+        }
         String stringRepresentation = getStartLine(response) +
                 getHeaders(response) +
                 "\r\n";

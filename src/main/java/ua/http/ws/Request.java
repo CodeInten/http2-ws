@@ -8,11 +8,13 @@ public class Request {
     final String url;
     final Version httpVersion;
     final Map<String, String> headers;
+    final String body;
 
-    public Request(Method httpMethod, String url, Version httpVersion, Map<String, String> headers) {
+    public Request(Method httpMethod, String url, Version httpVersion, Map<String, String> headers, String body) {
         this.httpMethod = httpMethod;
         this.url = url;
         this.httpVersion = httpVersion;
         this.headers = headers;
+        this.body = body;
     }
 }

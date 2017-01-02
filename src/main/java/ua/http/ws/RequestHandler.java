@@ -5,6 +5,12 @@ import java.util.Map;
 
 public class RequestHandler {
     public Response handle(Request request) {
+        if (request instanceof HeaderFrameRequest) {
+            return new HeaderFrameResponse();
+        }
+        if (request.httpMethod == Method.PRI) {
+            return new SettingFrame();
+        }
         Map<String, String> headers = new HashMap<>();
         int status;
         String humanRead;
