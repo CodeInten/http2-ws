@@ -16,7 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -26,6 +25,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.io.File.pathSeparator;
+import static java.io.File.separator;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,22 +39,24 @@ public class WebServerEndToEndTest {
 
     @Before
     public void startWebServer() throws IOException, InterruptedException {
-        webServer = new ProcessBuilder("java", "-cp", "build/classes/main"+ File.pathSeparator+"build/runtime/*", "ua.http.ws.WebServer", "-p", "8080")
-                .start();
+        webServer = new ProcessBuilder(
+                "java",
+                "-cp", "build"+separator+"classes"+ separator+"main"+ pathSeparator+"build"+ separator+"runtime"+ separator+"*",
+                "ua.http.ws.WebServer",
+                "-p", "8080"
+        ).start();
         webServer.waitFor(1, TimeUnit.SECONDS);
     }
 
     @After
     public void stopWebServer() throws Exception {
-//        if (webServer.exitValue() != 0) {
-//            printWebServerErrors();
-//        }
+//        printWebServerErrors();
         webServer.destroy();
     }
 
     private void printWebServerErrors() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(webServer.getErrorStream()));
-        String line = null;
+        String line;
         while ((line = reader.readLine()) != null) {
             System.out.println (line);
         }
@@ -83,7 +86,7 @@ public class WebServerEndToEndTest {
             client.stop();
         }
 
-        @Test(timeout = 7_500)
+        @Test
         public void serverShouldSendOk_whenGetRequestOnRoot() throws Exception {
             client.start();
 
@@ -93,7 +96,7 @@ public class WebServerEndToEndTest {
             assertThat(response.getVersion(), is(HttpVersion.HTTP_1_1));
         }
 
-        @Test(timeout = 7_500)
+        @Test
         public void serverShouldSend_200_onTheSecondRequestOnRoot() throws Exception {
             client.start();
 
@@ -113,7 +116,7 @@ public class WebServerEndToEndTest {
                     .send();
         }
 
-        @Test(timeout = 7_500)
+        @Test
         public void serverShouldSendOk_whenClientAskForConnectionUpdateToHttp_2() throws Exception {
             client.start();
 
@@ -136,7 +139,7 @@ public class WebServerEndToEndTest {
             );
         }
 
-        @Test(timeout = 27_500)
+        @Test
         public void serverShouldSendOk_whenClientRequestRoot_byHttp2() throws Exception {
             HTTP2Client lowLevelClient = new HTTP2Client();
             lowLevelClient.start();

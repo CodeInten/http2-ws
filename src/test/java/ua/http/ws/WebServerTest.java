@@ -207,7 +207,7 @@ public class WebServerTest {
         return 0x7F_FF_FF_FF & (response[5] << 24 | response[6] << 16 | response[7] << 8 | response[8]);
     }
 
-    @Test(timeout = 7_500L)
+    @Test
     public void serverSend_headerFrameWith_status200_onHeaderFrame_toRoot() throws Exception {
         int maxHeaderSize = 4096;
         int maxHeaderTableSize = 4096;
