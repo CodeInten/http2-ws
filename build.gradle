@@ -1,35 +1,40 @@
-buildscript {
-    repositories {
-        mavenCentral()
-
-        maven { url "https://oss.sonatype.org/content/groups/public" }
-        maven { url "http://repo1.maven.org/maven2" }
-
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'org.scoverage:gradle-scoverage:0.6-SNAPSHOT'
-        classpath 'net.saliman:gradle-cobertura-plugin:2.0.0'
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
-
-        classpath "junit:junit:4.12"
-    }
-}
-
 plugins {
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.6.3'
-    id "me.champeau.gradle.jmh" version "0.3.1"
 }
 
 apply plugin: 'idea'
 apply plugin: 'java'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 group = 'codeinten.github.io'
 version = '0.1-SNAPSHOT'
+
+configurations {
+    acceptanceCompile.extendsFrom testCompile
+    acceptanceRuntime.extendsFrom testRuntime
+}
+
+sourceSets {
+    acceptance {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+    }
+}
+
+task copyRuntimeDependencies(type: Copy) {
+    from configurations.compile
+    into 'build/runtime/'
+}
+
+task acceptance(type: Test) {
+    dependsOn(test, copyRuntimeDependencies)
+    testClassesDir = sourceSets.acceptance.output.classesDir
+    classpath = sourceSets.acceptance.runtimeClasspath
+}
+
+check {
+    dependsOn(acceptance)
+}
 
 jacocoTestReport {
     reports {
@@ -45,9 +50,15 @@ repositories {
 }
 
 dependencies {
-    compile group: 'junit', name: 'junit', version:'4.12'
-    compile group: 'org.hamcrest', name: 'hamcrest-all', version:'1.3'
-    compile group: 'de.bechte.junit', name: 'junit-hierarchicalcontextrunner', version:'4.12.1'
+    compile group: 'com.twitter', name: 'hpack', version: '1.0.2'
+
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+
+    acceptanceCompile group: 'de.bechte.junit', name: 'junit-hierarchicalcontextrunner', version:'4.12.1'
+    acceptanceCompile group: 'org.eclipse.jetty', name: 'jetty-client', version: '9.3.12.v20160915'
+    acceptanceCompile group: 'org.eclipse.jetty.http2', name: 'http2-client', version: '9.3.12.v20160915'
+    acceptanceCompile group: 'org.eclipse.jetty.http2', name: 'http2-http-client-transport', version: '9.3.12.v20160915'
 }
 
 if (System.env.TRAVIS == 'true') {
